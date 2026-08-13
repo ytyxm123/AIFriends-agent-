@@ -1,15 +1,12 @@
-<script>
-
-import {defineComponent} from "vue";
+<script setup>
 import MenuIcons from "@/components/navbar/icons/MenuIcons.vue";
 import HomeIcons from "@/components/navbar/icons/HomeIcons.vue";
 import FriendIcons from "@/components/navbar/icons/FriendIcons.vue";
 import CreateIcons from "@/components/navbar/icons/CreateIcons.vue";
 import SearchIcons from "@/components/navbar/icons/SearchIcons.vue";
-
-export default defineComponent({
-  components: {SearchIcons, CreateIcons, FriendIcons, HomeIcons, MenuIcons}
-})
+import {useUserStore} from "@/stores/user.js";
+import UserMenu from "@/components/navbar/UserMenu.vue";
+const user = useUserStore()
 </script>
 
 <template>
@@ -24,8 +21,8 @@ export default defineComponent({
               </label>
               <div class="px-2 font-bold text-xl">AiFriends</div>
               </div>
-              <div class="navbar-center w-4/5 max-w-180">
-              <div class="join w-4/5 ">
+              <div class="navbar-center w-4/5 max-w-180 flex justify-center">
+              <div class="join w-4/5 flex justify-center">
                 <input class="input join-item rounded-l-full w-4/5" placeholder="搜索你感兴趣的内容" />
                 <button class="btn join-item rounded-r-full w=4/5 gap-0">
                   <SearchIcons/>
@@ -33,7 +30,13 @@ export default defineComponent({
               </div>
               </div>
               <div class="navbar-end">
-              <button class="btn btn-ghost text-lg">登录</button>
+                  <RouterLink v-if="user.isLogin()" :to = "{name:'create-index'}" active-class="btn-active" class="btn btn-ghost text-base mr-6" data-tip="创作">
+                    <!-- Home icon -->
+                    <CreateIcons/>
+                    <span class="is-drawer-close:hidden text-base ml-2 whitespace-nowrap">创作</span>
+                  </RouterLink>
+                  <RouterLink v-if="!user.isLogin()" :to = "{name:'login-index'}" active-class="btn-active" class="btn btn-ghost text-lg">登录</RouterLink>
+                <UserMenu v-else/>
               </div>
             </nav>
             <!-- Page content here -->
@@ -45,32 +48,25 @@ export default defineComponent({
             <div class="flex min-h-full flex-col items-start bg-base-200 is-drawer-close:w-16 is-drawer-open:w-64">
               <ul class="menu w-full grow">
                 <li>
-                  <button class="is-drawer-close:tooltip is-drawer-close:tooltip-right py-3" data-tip="首页">
+                  <RouterLink  :to = "{name:'homepage-index'}" active-class="menu-focus" class="is-drawer-close:tooltip is-drawer-close:tooltip-right py-3" data-tip="首页">
                     <!-- Home icon -->
                     <HomeIcons/>
                     <span class="is-drawer-close:hidden text-base ml-2 whitespace-nowrap">首页</span>
-                  </button>
+                  </RouterLink>
                 </li>
                 <li>
-                  <button class="is-drawer-close:tooltip is-drawer-close:tooltip-right py-3" data-tip="好友">
+                  <RouterLink  :to = "{name:'Friend-index'}" active-class="menu-focus" class="is-drawer-close:tooltip is-drawer-close:tooltip-right py-3" data-tip="好友">
                     <!-- Home icon -->
                     <FriendIcons/>
                     <span class="is-drawer-close:hidden text-base ml-2 whitespace-nowrap">好友</span>
-                  </button>
+                  </RouterLink>
                 </li>
                 <li>
-                  <button class="is-drawer-close:tooltip is-drawer-close:tooltip-right py-3" data-tip="创作">
+                  <RouterLink :to = "{name:'create-index'}" active-class="menu-focus" class="is-drawer-close:tooltip is-drawer-close:tooltip-right py-3" data-tip="创作">
                     <!-- Home icon -->
                     <CreateIcons/>
                     <span class="is-drawer-close:hidden text-base ml-2 whitespace-nowrap">创作</span>
-                  </button>
-                </li>
-                <li>
-                  <button class="is-drawer-close:tooltip is-drawer-close:tooltip-right py-3" data-tip="首页">
-                    <!-- Home icon -->
-                    <HomeIcons/>
-                    <span class="is-drawer-close:hidden text-base ml-2 whitespace-nowrap">首页</span>
-                  </button>
+                  </RouterLink>
                 </li>
 
               </ul>
