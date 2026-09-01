@@ -3,12 +3,35 @@ import {useUserStore} from "@/stores/user";
 import UserSpaceIcon from "@/components/navbar/icons/UserSpaceIcon.vue";
 import UserProfileIcon from "@/components/navbar/icons/UserProfileIcon.vue";
 import UserLogoutIcon from "@/components/navbar/icons/UserLogoutIcon.vue";
+import api from "@/js/http/api.js";
+import {useRouter} from "vue-router";
 
 const user = useUserStore()
+
+const router = useRouter()
 
 function closeMenu() {//点击菜单的元素后隐藏菜单
   const element = document.activeElement
   if (element && element instanceof HTMLElement) element.blur()
+}
+
+async function logout() {
+
+      try{
+        const res =await api.post("api/user/logout/")
+      const data = res.data
+      if(data.result ==='success'){
+        user.logout()
+       await router.push({
+          name:'homepage-index',
+        })
+      }
+      else{
+        error_message.value = data.result
+      }
+    }catch (err){
+      console.log(err)
+    }
 }
 </script>
 
@@ -19,7 +42,7 @@ function closeMenu() {//点击菜单的元素后隐藏菜单
             <img :src="user.photo" />
            </div>
         </div>
-        <ul tabindex="-1" class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-lg">
+        <ul tabindex="-1" class="dropdown-content menu bg-base-100 rounded-box z-1 w-47 p-2 shadow-lg">
           <li>
             <RouterLink @click="closeMenu()" :to="{name:'space-index',params:{user_id:user.id}}">
               <div class="avatar">
@@ -27,7 +50,7 @@ function closeMenu() {//点击菜单的元素后隐藏菜单
                   <img :src="user.photo" />
                 </div>
               </div>
-              <span class="text-base font-bold line-clamp-1">{{user.username}}</span>
+              <span class="text-base font-bold line-clamp-1 break-all">{{user.username}}</span>
             </RouterLink>
           </li>
           <li>
@@ -44,7 +67,7 @@ function closeMenu() {//点击菜单的元素后隐藏菜单
           </li>
           <li></li>
           <li>
-             <a @click="closeMenu()" class="text-sm font-bold py-3">
+             <a @click="logout()" class="text-sm font-bold py-3">
                <UserLogoutIcon/>
                退出
             </a>

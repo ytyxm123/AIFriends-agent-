@@ -1,6 +1,7 @@
 from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 
 from rest_framework.response import Response
 
@@ -13,7 +14,7 @@ class RefreshToken(APIView):
                 return Response({
                     'result': 'refresh token不存在',
                 },status=401)
-            refresh = RefreshToken(refresh_token)#自己检查是不是在有效期内，如果过期了会报异常
+            refresh = JWTRefreshToken(refresh_token)#自己检查是不是在有效期内，如果过期了会报异常
             if settings.SIMPLE_JWT['ROTATE_REFRESH_TOKENS']:
                 refresh.set_jti()
                 response = Response({
