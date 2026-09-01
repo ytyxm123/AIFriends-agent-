@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomepageIndex from "@/views/Homepage/HomepageIndex.vue";
 import FriendIndex from "@/views/friends/FriendIndex.vue";
+// @ts-ignore
 import CreateIndex from "@/views/create/CreateIndex.vue";
 // @ts-ignore
 import RegisterIndex from "@/views/user/account/RegisterIndex.vue";
@@ -13,6 +14,8 @@ import LoginIndex from "@/views/user/account/LoginIndex.vue";
 
 // @ts-ignore
 import {useUserStore} from "@/stores/user";
+// @ts-ignore
+import UpdateCharacter from "@/views/create/character/UpdateCharacter.vue";
 
 
 const router = createRouter({
@@ -39,6 +42,14 @@ const router = createRouter({
       path:'/create/',
       component:CreateIndex,
       name:'create-index',
+      meta:{
+        needLogin:true,
+      }
+    },
+    {
+      path:'/create/character/update/:character_id',
+      component:UpdateCharacter,
+      name:'character-update-index',
       meta:{
         needLogin:true,
       }
