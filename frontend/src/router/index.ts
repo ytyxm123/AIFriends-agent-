@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+// @ts-ignore
 import HomepageIndex from "@/views/Homepage/HomepageIndex.vue";
 import FriendIndex from "@/views/friends/FriendIndex.vue";
 // @ts-ignore
