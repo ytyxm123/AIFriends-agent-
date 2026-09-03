@@ -6,6 +6,9 @@ from web.views.create.character.get_list import GetListCharacterView
 from web.views.create.character.get_single import GetSingleView
 from web.views.create.character.remove import RemoveCharacterView
 from web.views.create.character.update import UpdateCharacterView
+from web.views.friend.get_list import GetListFriendView
+from web.views.friend.get_or_create import GetOrCreateFriendView
+from web.views.friend.remove import RemoveFriendView
 from web.views.homepage.index import HomepageIndexView
 from web.views.index import index
 from web.views.user.account.get_user_info import GetUserInfoView
@@ -36,6 +39,12 @@ urlpatterns = [
     path('api/get_list/character/',GetListCharacterView.as_view()),
 
     path('api/homePage/index/',HomepageIndexView.as_view()),
+
+    path('api/remove/friends/', RemoveFriendView.as_view()),
+
+    path('api/get_list/friends', GetListFriendView.as_view()),
+
+    path('api/get_or_create/friends', GetOrCreateFriendView.as_view()),
     path('',index),
     re_path(r'^(?!media/|static/|assets/).*$', index)
 ]
