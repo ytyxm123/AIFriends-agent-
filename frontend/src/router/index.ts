@@ -8,6 +8,7 @@ import RegisterIndex from "@/views/user/account/RegisterIndex.vue";
 import NotFoundIndex from "@/views/error/NotFoundIndex.vue";
 // @ts-ignore
 import ProfileIndex from "@/views/user/profile/ProfileIndex.vue";
+// @ts-ignore
 import SpaceIndex from "@/views/user/space/SpaceIndex.vue";
 // @ts-ignore
 import LoginIndex from "@/views/user/account/LoginIndex.vue";
