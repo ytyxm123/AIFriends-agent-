@@ -13,7 +13,7 @@ class GetListCharacterView(APIView):
             user_id = request.query_params.get('user_id')
             user = User.objects.get(id=user_id)
             user_profile = UserProfile.objects.get(user=user)
-            characters_row = Character.objects.filter(author=user_profile).order_by('id')[items_count:items_count+1]
+            characters_row = Character.objects.filter(author=user_profile).order_by('id')[items_count:items_count+20]
             characters = []
             for character in characters_row:
                 author = character.author
