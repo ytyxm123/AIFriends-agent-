@@ -22,7 +22,11 @@ class GetOrCreateFriendView(APIView):
             author = character.author
             return Response({
                 'result':'success',
-                'author':author,
+                'author': {
+                        'user_id': author.user_id,
+                        'username': author.user.username,
+                        'photo': author.photo.url
+                },
                 'friend':{
                     'id':friend.id,
                     'character':{

@@ -59,7 +59,7 @@ onMounted(async () => {
     entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          loadMore()
+          loadCharacters()
         }
       })
     },
