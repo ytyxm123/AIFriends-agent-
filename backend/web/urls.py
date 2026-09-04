@@ -42,9 +42,9 @@ urlpatterns = [
 
     path('api/remove/friends/', RemoveFriendView.as_view()),
 
-    path('api/get_list/friends', GetListFriendView.as_view()),
+    path('api/get_list/friends/', GetListFriendView.as_view()),
 
-    path('api/get_or_create/friends', GetOrCreateFriendView.as_view()),
+    path('api/get_or_create/friends/', GetOrCreateFriendView.as_view()),
     path('',index),
     re_path(r'^(?!media/|static/|assets/).*$', index)
 ]
