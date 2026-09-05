@@ -9,6 +9,8 @@ const inputRef = useTemplateRef('input-ref')
 const message = ref('')
 const props = defineProps(["friendId"]);
 
+const emit = defineEmits(["PushBackMessage", "addToLastMessage"]);
+
 let isProcessing = false
 function focus()
 {
@@ -27,6 +29,10 @@ async function sendMessage()
   const content = message.value.trim()
   if(!content) return
   message.value = ''
+
+  emit("PushBackMessage", {role:'user',content:content,id:crypto.randomUUID()})
+
+  emit("PushBackMessage", {role:'ai',content:'',id:crypto.randomUUID()})
   try{
     const res = await streamApi('/api/friend/message/chat/',{
         body:{
@@ -36,8 +42,8 @@ async function sendMessage()
         onmessage(data,isDone){
             if(isDone){
               isProcessing = false
-            }else{
-              console.log(data.content)
+            }else if(data.content){
+              emit('addToLastMessage', data.content)
             }
         },
         onerror(err){

@@ -2,10 +2,14 @@
 import {computed, nextTick, ref, useTemplateRef} from "vue";
 import InputField from "@/components/character/chat_field/input_field/InputField.vue";
 import CharacterPhotoField from "@/components/character/chat_field/character_photo_field/CharacterPhotoField.vue";
+import ChatHistory from "@/components/character/chat_field/chat_history/ChatHistory.vue";
 
 const props = defineProps(['friend'])
 const modalRef = useTemplateRef('modal-ref')
 const inputRef = useTemplateRef('input-ref')
+const chatHistoryRef = useTemplateRef('chat-history-ref')
+
+const history = ref([])
 
 async function showModal ()
 {
@@ -26,6 +30,22 @@ const modalStyle = computed(() => {
     return {}
   }
 })
+
+function PushBackMessage(msg)
+{
+  history.value.push(msg)
+  chatHistoryRef.value.scrollToBottom()
+}
+
+function addToLastMessage(delta)
+{
+  history.value.at(-1).content+=delta
+  chatHistoryRef.value.scrollToBottom()
+}
+
+function PushFrontMessage(msg){
+  history.value.unshift(msg)
+}
 defineExpose({
       showModal,
     })
@@ -33,12 +53,22 @@ defineExpose({
 
 <template>
 <dialog class="modal" ref="modal-ref">
-  <div class="modal-box w-90 h-150" :style="modalStyle">
+  <div class="modal-box w-90 h-150 overflow-hidden" :style="modalStyle">
     <button @click="modalRef.close()" class="btn btn-ghost btn-circle btn-sm bg-transparent absolute right-1 top-1">✕</button>
+    <ChatHistory
+        ref="chat-history-ref"
+        v-if="friend"
+        :history="history"
+        :friendId="friend.id"
+        :character="friend.character"
+        @PushFrontMessage="PushFrontMessage"
+    />
     <InputField
         v-if="friend"
         ref="input-ref"
         :friendId="friend.id"
+        @PushBackMessage="PushBackMessage"
+        @addToLastMessage="addToLastMessage"
     />
     <CharacterPhotoField v-if="friend" :character="friend.character"/>
   </div>

@@ -17,11 +17,12 @@ class Friend(models.Model):
 class Message(models.Model):
     friend = models.ForeignKey(Friend, on_delete=models.CASCADE)
     user_message = models.TextField(max_length=5000)#用户的消息
-    input= models.TextField(max_length=5000)#用户的消息被优化的消息
+    input= models.TextField(max_length=10000)#用户的消息被优化的消息
     output = models.TextField(max_length=5000)
     create_time = models.DateTimeField(default=now)
     input_tokens = models.IntegerField(default=0)
     output_tokens = models.IntegerField(default=0)
+    total_tokens = models.IntegerField(default=0)
     create_time = models.DateTimeField(default=now)
 
 
