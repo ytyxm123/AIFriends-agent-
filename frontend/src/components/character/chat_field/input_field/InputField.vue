@@ -20,14 +20,15 @@ function focus()
 async function sendMessage()
 {
 
-  if(isProcessing){
-    return
-  }else {
-    isProcessing = true
-  }
+
+
 
   const content = message.value.trim()
   if(!content) return
+    if(isProcessing){
+    return
+  }
+  isProcessing = true
   message.value = ''
 
   emit("PushBackMessage", {role:'user',content:content,id:crypto.randomUUID()})
