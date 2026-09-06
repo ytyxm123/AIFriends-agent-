@@ -1,6 +1,5 @@
 #把聊天消息交给大模型，再把大模型的回复加入聊天记录
 import json
-from pprint import pprint
 
 from django.http import StreamingHttpResponse
 from langchain_core.messages import HumanMessage, BaseMessageChunk, SystemMessage, AIMessage
@@ -15,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from web.models.character import Character
 from web.models.friend import Friend, Message, SystemPrompt
 from web.views.friend.message.chat.graph import ChatGraph
+from web.views.friend.message.memory.update import update_memory
 
 
 class SSERenderer(BaseRenderer):
@@ -31,6 +31,7 @@ def add_system_prompt(state,friend):
         for p in system_prompt:
             prompt+=p.prompt
         prompt+=f'\n【角色性格】\n{friend.character.profile}\n'
+        prompt+=f'【长期记忆】\n{friend.memory}\n'
         return {'messages':[SystemMessage(prompt)]+msgs}
 
 
@@ -92,6 +93,10 @@ class MessageChatView(APIView):
                 output_tokens = output_tokens,
                 total_tokens = total_tokens,
             )
+
+            if Message.objects.filter(friend = friend).exists()%1==0:
+                update_memory(friend)
+
         response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
         response['Cache-Control'] = 'no-cache'
         return response
