@@ -46,6 +46,12 @@ function addToLastMessage(delta)
 function PushFrontMessage(msg){
   history.value.unshift(msg)
 }
+
+function handleClose()
+{
+  modalRef.value.close()
+  inputRef.value.close()
+}
 defineExpose({
       showModal,
     })
@@ -54,7 +60,7 @@ defineExpose({
 <template>
 <dialog class="modal" ref="modal-ref">
   <div class="modal-box w-90 h-150 overflow-hidden" :style="modalStyle">
-    <button @click="modalRef.close()" class="btn btn-ghost btn-circle btn-sm bg-transparent absolute right-1 top-1">✕</button>
+    <button @click="handleClose" class="btn btn-ghost btn-circle btn-sm bg-transparent absolute right-1 top-1">✕</button>
     <ChatHistory
         ref="chat-history-ref"
         v-if="friend"
