@@ -1,6 +1,14 @@
 #把聊天消息交给大模型，再把大模型的回复加入聊天记录
+import asyncio
+import base64
 import json
+import os
+import threading
+from queue import Queue
 
+import uuid
+
+import websockets
 from django.http import StreamingHttpResponse
 from langchain_core.messages import HumanMessage, BaseMessageChunk, SystemMessage, AIMessage
 from rest_framework.renderers import BaseRenderer
@@ -10,8 +18,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from rest_framework.permissions import IsAuthenticated
-
-from web.models.character import Character
 from web.models.friend import Friend, Message, SystemPrompt
 from web.views.friend.message.chat.graph import ChatGraph
 from web.views.friend.message.memory.update import update_memory
@@ -67,39 +73,146 @@ class MessageChatView(APIView):
         }
         inputs = add_system_prompt(inputs,friend)
         inputs = add_recent_messages(inputs,friend)
-        def event_stream():#流式输出
-            final_output = ''
-            final_usage = {}
-            for msg, metadata in app.stream(inputs, stream_mode="messages"):
-                if isinstance(msg, BaseMessageChunk):
-                    if msg.content:
-                        final_output += msg.content
-                        yield f"data: {json.dumps({'content': msg.content}, ensure_ascii=False)}\n\n"
-                    if hasattr(msg, 'usage_metadata') and msg.usage_metadata:
-                        final_usage = msg.usage_metadata
-            yield "data: [DONE]\n\n"
-            input_tokens = final_usage.get('input_tokens',0)
-            output_tokens = final_usage.get('output_tokens',0)
-            total_tokens = final_usage.get('total_tokens',0)
-            Message.objects.create(
-                friend=friend,
-                user_message=message[:500],
-                input = json.dumps(
-                    [m.model_dump() for m in inputs['messages']],
-                    ensure_ascii=False
-                )[:10000],
-                output = final_output[:500],
-                input_tokens = input_tokens,
-                output_tokens = output_tokens,
-                total_tokens = total_tokens,
-            )
-            message_count = Message.objects.filter(friend=friend).count()
 
-            if message_count%10==0:
-                update_memory(friend)
-
-        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response = StreamingHttpResponse(
+            self.event_stream(app,inputs,friend,message),
+            content_type="text/event-stream")
         response['Cache-Control'] = 'no-cache'
         return response
+
+
+    async  def tts_sender(self,app,inputs,mq,ws,task_id):
+          async  for msg, metadata in app.astream(inputs, stream_mode="messages"):
+                if isinstance(msg, BaseMessageChunk):
+                    if msg.content:
+                        await ws.send(json.dumps({
+                            "header": {
+                                "action": "continue-task",
+                                "task_id": task_id,  # 随机uuid
+                                "streaming": "duplex"
+                            },
+                            "payload": {
+                                "input": {
+                                    "text": msg.content,
+                                }
+                            }
+
+                        }))
+                        mq.put_nowait({
+                            'content': msg.content,
+                        })
+                    if hasattr(msg, 'usage_metadata') and msg.usage_metadata:
+                        mq.put_nowait({
+                            'usage': msg.usage_metadata,
+                        })
+          await ws.send(json.dumps({
+              "header": {
+                  "action": "finish-task",
+                  "task_id": task_id,
+                  "streaming": "duplex"
+              },
+              "payload": {
+                  "input": {}  # input不能省去，否则会报错
+              }
+          }))
+
+    async def tts_receiver(self,mq,ws):
+        async for msg in ws:
+            if isinstance(msg, bytes):
+                audio = base64.b64encode(msg).decode('UTF-8')
+                mq.put_nowait({'audio': audio})
+            else:
+                data =  json.loads(msg)
+                event = data['header']['event']
+                if event in ['task_finished','task_failed']:
+                    break
+
+    async  def run_tts_tasks(self,app,inputs,mq):
+        task_id = uuid.uuid4().hex
+        api_key = os.getenv('API_KEY')
+        wss_url = os.getenv('WSS_URL')
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+        }
+        async with websockets.connect(wss_url, additional_headers=headers) as ws:
+            await ws.send(json.dumps({
+                "header": {
+                    "action": "run-task",
+                    "task_id": task_id,  # 随机uuid
+                    "streaming": "duplex"
+                },
+                "payload": {
+                    "task_group": "audio",
+                    "task": "tts",
+                    "function": "SpeechSynthesizer",
+                    "model": "cosyvoice-v3-flash",
+                    "parameters": {
+                        "text_type": "PlainText",
+                        "voice": "longanyang",  # 音色
+                        "format": "mp3",  # 音频格式
+                        "sample_rate": 22050,  # 采样率
+                        "volume": 50,  # 音量
+                        "rate": 1.25,  # 语速
+                        "pitch": 1  # 音调
+                    },
+                    "input": {  # input不能省去，不然会报错
+                    }
+                }
+            }))
+            async for msg in ws:
+                if json.loads(msg)['header']['event'] == "task-started":
+                    break
+            await  asyncio.gather(
+                self.tts_sender(app,inputs,mq,ws,task_id),
+                self.tts_receiver(mq,ws)
+             )
+
+
+
+
+    def work(self,app,inputs,mq):
+        try:
+            asyncio.run(self.run_tts_tasks(app,inputs,mq))
+        finally:
+            mq.put_nowait(None)
+
+    def event_stream(self,app,inputs,friend,message):  # 流式输出
+        mq = Queue()
+        thread = threading.Thread(target=self.work,args=(app,inputs,mq))
+        thread.start()
+        final_output = ''
+        final_usage = {}
+        while True:
+            msg = mq.get()
+            if not msg:
+                break
+            if msg.get('content',None):
+                final_output += msg['content']
+                yield f"data: {json.dumps({'content': msg['content']}, ensure_ascii=False)}\n\n"
+            if msg.get('audio',None):
+                yield f"data: {json.dumps({'audio': msg['audio']}, ensure_ascii=False)}\n\n"
+            if msg.get('usage',None):
+                final_usage = msg.get('usage')
+
+        yield "data: [DONE]\n\n"
+        input_tokens = final_usage.get('input_tokens', 0)
+        output_tokens = final_usage.get('output_tokens', 0)
+        total_tokens = final_usage.get('total_tokens', 0)
+        Message.objects.create(
+            friend=friend,
+            user_message=message[:500],
+            input=json.dumps(
+                [m.model_dump() for m in inputs['messages']],
+                ensure_ascii=False
+            )[:10000],
+            output=final_output[:500],
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=total_tokens,
+        )
+        message_count = Message.objects.filter(friend=friend).count()
+
+        if message_count % 10 == 0:
+            update_memory(friend)
 
 
