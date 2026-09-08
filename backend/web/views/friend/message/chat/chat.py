@@ -78,6 +78,7 @@ class MessageChatView(APIView):
             self.event_stream(app,inputs,friend,message),
             content_type="text/event-stream")
         response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
         return response
 
 
@@ -124,7 +125,7 @@ class MessageChatView(APIView):
             else:
                 data =  json.loads(msg)
                 event = data['header']['event']
-                if event in ['task_finished','task_failed']:
+                if event in ['task-finished','task-failed']:
                     break
 
     async  def run_tts_tasks(self,app,inputs,mq):
