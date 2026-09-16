@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from web.models.character import Character
+from web.models.character import Character, Voice
 from web.models.user import UserProfile
 
 
@@ -13,6 +13,7 @@ class CreateCharacterView(APIView):
         try:
             user = request.user
             user_profile = UserProfile.objects.get(user=user)
+            voice_id = request.data.get('voice_id')
             name = request.data.get('name').strip()
             profile = request.data.get('profile').strip()[:100000]
             photo = request.FILES.get('photo',None)
@@ -34,12 +35,15 @@ class CreateCharacterView(APIView):
                 return Response({
                     'result','角色头像不能为空'
                 })
+
+            voice = Voice.objects.get(id=voice_id)
             Character.objects.create(
                 author=user_profile,
                 name=name,
                 profile=profile,
                 background_image=background_image,
-                photo=photo
+                photo=photo,
+                voice=voice,
             )
             return Response({
                 'result':'success'

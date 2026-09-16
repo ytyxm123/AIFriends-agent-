@@ -9,13 +9,16 @@ import {base64ToFile} from "@/js/utils/base64_to_file.js";
 import api from "@/js/http/api.js";
 import {useRoute, useRouter} from "vue-router";
 import {useUserStore} from "@/stores/user.js";
+import Vocie from "@/views/create/character/components/Vocie.vue";
 
 const router = useRouter();
 const user = useUserStore()
 const route = useRoute()
 const characterId = route.params.character_id
 const character = ref(null)
-
+const voices = ref([])
+const curVoiceId = ref(null)
+const voiceRef  = useTemplateRef('voice-ref')
 onMounted(async() => {
   try{
     const res = await api.get('/api/get_single/character/',{
@@ -26,6 +29,8 @@ onMounted(async() => {
     const data = res.data
     if(data.result==='success'){
       character.value = data.character
+      voices.value = data.voices
+      curVoiceId.value = data.character.voice_id
     }
   }catch(error){
     console.error(error)
@@ -41,8 +46,10 @@ const errorMessage = ref('')
 async function update() {
   const photo = photoRef.value.myPhoto
   const name = nameRef.value.myName?.trim()
+  const voice = voiceRef.value.myVoice
   const profile = profileRef.value.myProfile?.trim()
   const backgroundImage = backgroundImageRef.value.myBackgroundImage
+
 
   errorMessage.value=''
   if(!photo)
@@ -53,13 +60,18 @@ async function update() {
     errorMessage.value='名称不能为空'
   }else if(!profile){
     errorMessage.value='角色介绍不能为空'
-  }else if(!backgroundImage){
+  }else if(!voice)
+  {
+    errorMessage.value='音色不能为空'
+  }
+  else if(!backgroundImage){
     errorMessage.value='聊天背景不能为空'
   }else{
     const formData = new FormData()
     formData.append("character_id", characterId)
     formData.append("profile",profile)
     formData.append("name",name)
+    formData.append("voice_id",voice)
     if(photo!==character.value.photo)
     {
       formData.append('photo', base64ToFile(photo,'photo.png'))
@@ -102,6 +114,7 @@ async function update() {
       <h3 class="text-lg font-bold my-4">修改角色</h3>
       <Photo ref="photo-ref" :photo="character.photo"/>
       <Name ref="name-ref" :name="character.name"/>
+      <Vocie ref="voice-ref" :voices="voices" :curVoiceId="curVoiceId"/>
       <Profile ref="profile-ref" :profile="character.profile" />
       <BackgroundImage ref="backgroundImage-ref" :backgroundImage="character.background_image"/>
       <p v-if="errorMessage" class="text-sm text-red-500">{{errorMessage}}</p>
