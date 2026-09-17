@@ -5,7 +5,7 @@ import json
 import os
 import threading
 from queue import Queue
-
+import socket
 import uuid
 
 import websockets
@@ -135,7 +135,7 @@ class MessageChatView(APIView):
         headers = {
             "Authorization": f"Bearer {api_key}",
         }
-        async with websockets.connect(wss_url, additional_headers=headers) as ws:
+        async with websockets.connect(wss_url, additional_headers=headers, family=socket.AF_INET,open_timeout=15,) as ws:
             await ws.send(json.dumps({
                 "header": {
                     "action": "run-task",
@@ -146,7 +146,7 @@ class MessageChatView(APIView):
                     "task_group": "audio",
                     "task": "tts",
                     "function": "SpeechSynthesizer",
-                    "model": "cosyvoice-v3-flash",
+                    "model": "cosyvoice-v3-plus",
                     "parameters": {
                         "text_type": "PlainText",
                         "voice": voice_id,  # 音色
