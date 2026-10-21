@@ -43,6 +43,14 @@ function addToLastMessage(delta)
   chatHistoryRef.value.scrollToBottom()
 }
 
+function updateMessageState({id, ...changes})
+{
+  const message = history.value.find(item => item.id === id)
+  if (!message) return
+  Object.assign(message, changes)
+  chatHistoryRef.value?.scrollToBottom()
+}
+
 function PushFrontMessage(msg){
   history.value.unshift(msg)
 }
@@ -74,6 +82,7 @@ defineExpose({
         :friendId="friend.id"
         @PushBackMessage="PushBackMessage"
         @addToLastMessage="addToLastMessage"
+        @updateMessageState="updateMessageState"
     />
     <CharacterPhotoField v-if="friend" :character="friend.character"/>
   </div>

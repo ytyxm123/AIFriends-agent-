@@ -10,9 +10,11 @@ const inputRef = useTemplateRef('input-ref')
 const message = ref('')
 const props = defineProps(["friendId"]);
 
-const emit = defineEmits(["PushBackMessage", "addToLastMessage"]);
+const emit = defineEmits(["PushBackMessage", "addToLastMessage", "updateMessageState"]);
 
 let processId = 0
+const sending = ref(false)
+let activeReplyId = null
 
 let showMic = ref(false);
 
@@ -116,38 +118,61 @@ async function sendMessage(event,audio_msg)
   }else{
     content = message.value.trim()
   }
-  if(!content) return
-  initAudioStream()
+  if(!content || sending.value) return
+  sending.value = true
   const curId =++processId
+  const replyId = crypto.randomUUID()
+  activeReplyId = replyId
+  const updateState = (changes) => emit('updateMessageState', {id: replyId, ...changes})
   message.value = ''
 
   emit("PushBackMessage", {role:'user',content:content,id:crypto.randomUUID()})
 
-  emit("PushBackMessage", {role:'ai',content:'',id:crypto.randomUUID()})
+  emit("PushBackMessage", {role:'ai',content:'',id:replyId,status:'thinking'})
   try{
-    const res = await streamApi('/api/friend/message/chat/',{
+    // Keep the existing voice behaviour without a separate checkbox.
+    try { initAudioStream() }
+    catch { updateState({notice: '当前浏览器暂不支持语音播放，文字回复不受影响。'}) }
+    await streamApi('/api/friend/message/chat/',{
         body:{
           'friend_id':props.friendId,
-          'message':content
+          'message':content,
+          'enable_tts':true
         },
         onmessage(data,isDone){
 
           if(curId!==processId) return
+          if(isDone) {
+            updateState({status: ''})
+            return
+          }
+          if(data.status === 'optimizing') updateState({status: 'optimizing'})
+          if(data.status === 'ready') updateState({status: ''})
           if(data.content){
+              updateState({status: 'replying'})
               emit('addToLastMessage', data.content)
             }
           if(data.audio){
             handleAudioChunk(data.audio)
           }
+          if(data.error){
+            updateState({status: ''})
+            emit('addToLastMessage', data.error)
+          }
+          if(data.warning) updateState({notice: data.warning})
         },
-        onerror(err){
-        }
     })
   }catch (e){
+    if(curId === processId) emit('addToLastMessage', e.message || '连接 AI 服务失败，请稍后重试。')
+  }finally{
+    sending.value = false
+    updateState({status: ''})
+    if (activeReplyId === replyId) activeReplyId = null
   }
 }
 function close()
 {
+  if (activeReplyId) emit('updateMessageState', {id: activeReplyId, status: ''})
   processId++
   showMic.value = false
   stopAudio()
@@ -156,6 +181,7 @@ function close()
 
 function stop()
 {
+  if (activeReplyId) emit('updateMessageState', {id: activeReplyId, status: ''})
   processId++
   stopAudio()
 }
@@ -177,7 +203,7 @@ defineExpose({
   <div @click="sendMessage" class="absolute right-2 w-8 h-8 flex items-center justify-center cursor-pointer">
       <SendIcons/>
   </div>
-    <div @click="showMic=true" class="absolute right-9 w-8 h-8 flex items-center justify-center cursor-pointer">
+    <div @click="!sending && (showMic=true)" class="absolute right-9 w-8 h-8 flex items-center justify-center cursor-pointer">
       <MicIcons/>
   </div>
 </form>

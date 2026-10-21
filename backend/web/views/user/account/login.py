@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -6,6 +7,7 @@ from web.models.user import UserProfile
 
 
 class LoginView(APIView):
+    authentication_classes = []
     def post(self, request, *args, **kwargs):
         try:
             username = request.data['username'].strip()
@@ -21,6 +23,7 @@ class LoginView(APIView):
                     'result': 'success',
                     'access': str(refresh.access_token),
                     'user_id': user.id,
+                    'is_staff': user.is_staff,
                     'username': user.username,
                     'photo': user_profile.photo.url,
                     'profile': user_profile.profile,
@@ -30,7 +33,7 @@ class LoginView(APIView):
                     value=str(refresh),
                     httponly=True,
                     samesite='lax',
-                    secure=True,
+                    secure=not settings.DEBUG,
                     max_age=86400*7,
                 )
                 return response

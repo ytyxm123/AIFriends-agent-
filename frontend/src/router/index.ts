@@ -21,6 +21,12 @@ import LoginIndex from "@/views/user/account/LoginIndex.vue";
 import {useUserStore} from "@/stores/user";
 // @ts-ignore
 import UpdateCharacter from "@/views/create/character/UpdateCharacter.vue";
+// @ts-ignore
+import TraceAdminIndex from "@/views/admin/TraceAdminIndex.vue";
+// @ts-ignore
+import TraceDetail from "@/views/admin/TraceDetail.vue";
+// @ts-ignore
+import McpAdmin from "@/views/admin/McpAdmin.vue";
 
 
 const router = createRouter({
@@ -97,6 +103,30 @@ const router = createRouter({
       name:'space-index',
       meta:{
         needLogin:false,
+      }
+    },
+    {
+      path:'/admin/traces/',
+      component:TraceAdminIndex,
+      name:'trace-admin-index',
+      meta:{
+        needLogin:true,
+      }
+    },
+    {
+      path:'/admin/traces/:trace_id/',
+      component:TraceDetail,
+      name:'trace-admin-detail',
+      meta:{
+        needLogin:true,
+      }
+    },
+    {
+      path:'/admin/mcp/',
+      component:McpAdmin,
+      name:'mcp-admin-index',
+      meta:{
+        needLogin:true,
       }
     },
     {

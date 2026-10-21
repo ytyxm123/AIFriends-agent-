@@ -65,6 +65,14 @@ async function logout() {
                编辑资料
             </RouterLink>
           </li>
+          <li v-if="user.isStaff">
+             <RouterLink @click="closeMenu()" :to="{name:'trace-admin-index'}" class="text-sm font-bold py-3">
+               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-4 3 3 5-6"/>
+               </svg>
+               运营后台
+            </RouterLink>
+          </li>
           <li></li>
           <li>
              <a @click="logout()" class="text-sm font-bold py-3">

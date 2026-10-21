@@ -14,11 +14,11 @@ class UpdateCharacterView(APIView):
         try:
             character_id = request.data.get('character_id')
             character = Character.objects.get(id=character_id,author__user=request.user)
-            name = request.data.get('name').strip()
-            voice_id = request.data['voice_id']
+            name = (request.data.get('name') or '').strip()
+            voice_id = request.data.get('voice_id')
             photo = request.FILES.get('photo',None)
             background_image = request.FILES.get('background_image',None)
-            profile = request.data.get('profile').strip()[:100000]
+            profile = (request.data.get('profile') or '').strip()[:100000]
 
             if not name:
                 return Response({
@@ -36,7 +36,7 @@ class UpdateCharacterView(APIView):
                 remove_old_photos(character.background_image)
                 character.background_image = background_image
 
-            voice = Voice.objects.get(id=voice_id)
+            voice = Voice.objects.get(id=voice_id) if voice_id else None
             character.name = name
             character.voice = voice
             character.profile = profile

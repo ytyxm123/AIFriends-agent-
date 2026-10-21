@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 from rest_framework.response import Response
 
 class RefreshToken(APIView):
+    authentication_classes = []
     def post(self, request):
         try:
             refresh_token = request.COOKIES.get('refresh_token')
@@ -26,7 +27,7 @@ class RefreshToken(APIView):
                     value=str(refresh),
                     httponly=True,
                     samesite='lax',
-                    secure=True,
+                    secure=not settings.DEBUG,
                     max_age=86400 * 7,
                 )
                 return response

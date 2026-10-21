@@ -17,6 +17,7 @@ class GetUserInfoView(APIView):
                 'username':user.username,
                 'photo':user_profile.photo.url,
                 'profile':user_profile.profile,
+                'is_staff':user.is_staff,
             })
 
         except:

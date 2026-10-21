@@ -14,8 +14,8 @@ class CreateCharacterView(APIView):
             user = request.user
             user_profile = UserProfile.objects.get(user=user)
             voice_id = request.data.get('voice_id')
-            name = request.data.get('name').strip()
-            profile = request.data.get('profile').strip()[:100000]
+            name = (request.data.get('name') or '').strip()
+            profile = (request.data.get('profile') or '').strip()[:100000]
             photo = request.FILES.get('photo',None)
             background_image = request.FILES.get('background_image',None)
 
@@ -33,10 +33,10 @@ class CreateCharacterView(APIView):
                 })
             if not photo:
                 return Response({
-                    'result','角色头像不能为空'
+                    'result':'角色头像不能为空'
                 })
 
-            voice = Voice.objects.get(id=voice_id)
+            voice = Voice.objects.get(id=voice_id) if voice_id else None
             Character.objects.create(
                 author=user_profile,
                 name=name,

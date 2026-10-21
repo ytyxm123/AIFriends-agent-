@@ -11,12 +11,33 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 from dotenv import load_dotenv
 import mimetypes
 
 mimetypes.add_type("application/javascript", ".mjs")
 
 load_dotenv()#加载环境变量
+
+# Memory-specific models can be changed without changing the chat or TTS models.
+# Additional budgets/thresholds are documented in docs/agent-memory.md.
+AGENT_MEMORY = {
+    'MODEL': os.getenv('MEMORY_MODEL', 'qwen-plus'),
+    'EMBEDDING_MODEL': os.getenv('MEMORY_EMBEDDING_MODEL', 'text-embedding-v4'),
+    'EMBEDDING_DIMENSIONS': int(os.getenv('MEMORY_EMBEDDING_DIMENSIONS', '1024')),
+    'USE_EMBEDDINGS': os.getenv('MEMORY_USE_EMBEDDINGS', 'true').lower() == 'true',
+}
+
+# MCP dynamic tooling. Commands are whitelisted by executable stem; timeouts
+# are in seconds (single-server connect, total connect budget, per tool call).
+MCP_ALLOWED_COMMANDS = [
+    c.strip() for c in
+    os.getenv('MCP_ALLOWED_COMMANDS', 'npx,uvx,python,python3').split(',')
+    if c.strip()
+]
+MCP_CONNECT_TIMEOUT = int(os.getenv('MCP_CONNECT_TIMEOUT', '8'))
+MCP_TOTAL_BUDGET = int(os.getenv('MCP_TOTAL_BUDGET', '15'))
+MCP_TOOL_TIMEOUT = int(os.getenv('MCP_TOOL_TIMEOUT', '30'))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,12 +47,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-bmf&s7)hpyl_6t7%*erh3ol*+p7^j^wmyni*8fs696q8f=1e%k'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-local-development-only')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
 
-ALLOWED_HOSTS = ['127.0.0.1','app8156.acapp.acwing.com.cn']
+ALLOWED_HOSTS = [
+    host.strip() for host in
+    os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+    if host.strip()
+]
 
 
 # Application definition
@@ -163,7 +188,11 @@ SIMPLE_JWT = {
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    origin.strip() for origin in
+    os.getenv(
+        'CORS_ALLOWED_ORIGINS',
+        'http://localhost:5173,http://127.0.0.1:5173',
+    ).split(',') if origin.strip()
 ]
 
 # Email

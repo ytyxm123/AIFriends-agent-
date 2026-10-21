@@ -7,6 +7,7 @@ export const useUserStore = defineStore('user',()=>{
     const photo = ref('')
     const profile = ref('')
     const accessToken = ref('')
+    const isStaff = ref(false)
 
     const HasPullInfo = ref(false)
     function  isLogin()
@@ -21,6 +22,7 @@ export const useUserStore = defineStore('user',()=>{
         username.value = data.username
         photo.value = data.photo
         profile.value = data.profile
+        isStaff.value = !!data.is_staff
     }
 
     function setHasPullInfo(hasPullInfo){
@@ -33,6 +35,7 @@ export const useUserStore = defineStore('user',()=>{
         photo.value = ""
         accessToken.value = ""
         profile.value = ""
+        isStaff.value = false
     }
     return {
         id,
@@ -40,6 +43,7 @@ export const useUserStore = defineStore('user',()=>{
         photo,
         accessToken,
         profile,
+        isStaff,
         isLogin,
         setAccessToken,
         setUserInfo,

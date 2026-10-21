@@ -1,4 +1,6 @@
 
+import os
+
 import lancedb
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import LanceDB
@@ -8,7 +10,9 @@ from web.documents.utils.custom_embeddings import CustomEmbeddings
 
 
 def insert_documents():
-    loader = TextLoader('./web/documents/data.txt',encoding='utf-8')
+    source_path = os.getenv('KNOWLEDGE_SOURCE_PATH', './web/documents/data.txt')
+    table_name = os.getenv('KNOWLEDGE_TABLE_NAME', 'my_knowledge_base')
+    loader = TextLoader(source_path, encoding='utf-8')
     documents = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=50)
     texts = text_splitter.split_documents(documents)
@@ -20,7 +24,7 @@ def insert_documents():
         documents=texts,
         embedding=embeddings,
         connection=db,
-        table_name='my_konwledge_base',
+        table_name=table_name,
         mode = 'overwrite'
     )
 

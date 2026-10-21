@@ -1,12 +1,27 @@
 __pycache__/
 *.py[cod]
 .idea/
+.vscode/
+*.log
 db.sqlite3
+db.sqlite3.*.bak
 media/
 staticfiles/
 static/
 *.env
+.env.*
+!.env.example
+.venv/
+venv/
+.pytest_cache/
 backend/web/documents/data.txt
 
 backend/web/documents/lancedb_storage/
 frontend/public/vad/
+
+# Local diagnostics; keep regression tests in backend/web/test_*.py.
+backend/scratch_*.py
+backend/full_test.txt
+backend/live.txt
+backend/raw.txt
+backend/raw2.txt

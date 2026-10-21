@@ -15,6 +15,17 @@ from web.views.friend.message.get_history import GetHistoryView
 from web.views.friend.remove import RemoveFriendView
 from web.views.homepage.index import HomepageIndexView
 from web.views.index import index
+from web.views.mcp.servers import (
+    McpServerDetailView,
+    McpServerListCreateView,
+    McpServerActionView,
+)
+from web.views.mcp.tools import McpToolListView, McpToolToggleView
+from web.views.observability.traces import (
+    TraceDetailView,
+    TraceListView,
+    TraceStatsView,
+)
 from web.views.user.account.get_user_info import GetUserInfoView
 from web.views.user.account.login import LoginView
 from web.views.user.account.logout import LogoutView
@@ -56,7 +67,17 @@ urlpatterns = [
 
     path('api/friend/message/asr/asr/', ASRView.as_view()),
 
+    path('api/observability/stats/', TraceStatsView.as_view()),
+    path('api/observability/traces/', TraceListView.as_view()),
+    path('api/observability/traces/<uuid:trace_id>/', TraceDetailView.as_view()),
+
+    path('api/mcp/servers/', McpServerListCreateView.as_view()),
+    path('api/mcp/servers/<int:server_id>/', McpServerDetailView.as_view()),
+    path('api/mcp/servers/<int:server_id>/<str:action>/', McpServerActionView.as_view()),
+    path('api/mcp/tools/', McpToolListView.as_view()),
+    path('api/mcp/tools/<int:tool_id>/toggle/', McpToolToggleView.as_view()),
+
     path('api/create/character/voice/get_list/', GetVoiceList.as_view()),
     path('',index),
-    re_path(r'^(?!media/|static/|assets/).*$', index)
+    re_path(r'^(?!api/|media/|static/|assets/).*$', index)
 ]

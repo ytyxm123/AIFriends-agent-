@@ -29,7 +29,7 @@ onMounted(async () => {
     const data = res.data
     if(data.result==='success'){
       voices.value = data.voices
-      curVoiceId.value = data.voices[0].id
+      curVoiceId.value = data.voices[0]?.id || ''
     }
   }catch(error){
     console.log(error)
@@ -50,11 +50,7 @@ async function create() {
   }else if(!name)
   {
     errorMessage.value='名称不能为空'
-  }else if(!voice)
-  {
-    errorMessage.value='音色不能为空'
-  }
-  else if(!profile){
+  }else if(!profile){
     errorMessage.value='角色介绍不能为空'
   }else if(!backgroundImage){
     errorMessage.value='聊天背景不能为空'

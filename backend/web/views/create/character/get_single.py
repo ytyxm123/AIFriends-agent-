@@ -29,7 +29,7 @@ class GetSingleView(APIView):
                     'photo':character.photo.url,
                     'profile':character.profile,
                     'background_image':character.background_image.url,
-                    'voice_id':character.voice.id,
+                    'voice_id':character.voice_id,
                 },
                 'voices':voice_list
             })

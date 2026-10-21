@@ -60,11 +60,7 @@ async function update() {
     errorMessage.value='名称不能为空'
   }else if(!profile){
     errorMessage.value='角色介绍不能为空'
-  }else if(!voice)
-  {
-    errorMessage.value='音色不能为空'
-  }
-  else if(!backgroundImage){
+  }else if(!backgroundImage){
     errorMessage.value='聊天背景不能为空'
   }else{
     const formData = new FormData()

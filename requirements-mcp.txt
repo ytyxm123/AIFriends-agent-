@@ -1,0 +1,2 @@
+mcp==1.30.0
+langchain-mcp-adapters==0.3.2

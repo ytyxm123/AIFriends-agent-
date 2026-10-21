@@ -6,7 +6,6 @@
 */
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { useUserStore } from "@/stores/user.js";
-import api from "./api.js";
 import CONFIG_API from "@/js/config/config.js";
 
 const BASE_URL = CONFIG_API.HTTP_URL
@@ -18,12 +17,19 @@ const BASE_URL = CONFIG_API.HTTP_URL
  */
 export default async function streamApi(url, options = {}) {
     const userStore = useUserStore();
+    let refreshed = false;
 
     const startFetch = async () => {
-        return await fetchEventSource(BASE_URL + url, {
+        const controller = new AbortController();
+        let refreshNeeded = false;
+        let completed = false;
+        await fetchEventSource(BASE_URL + url, {
+            signal: controller.signal,
+            credentials: 'include',
             method: options.method || 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'text/event-stream, application/json',
                 'Authorization': `Bearer ${userStore.accessToken}`,
                 ...options.headers,
             },
@@ -33,15 +39,13 @@ export default async function streamApi(url, options = {}) {
             async onopen(response) {
                 // 1. 处理 401 Token 过期
                 if (response.status === 401) {
-                    try {
-                        // 触发 api.js 中的 Axios 拦截器进行静默刷新
-                        await api.post('/api/user/account/refresh_token/', {});
-                        // 抛出特定错误触发下面的 onerror 重试逻辑
-                        throw new Error("TOKEN_REFRESHED");
-                    } catch (err) {
-                        // 如果刷新失败（refresh_token也过期），直接报错由上层处理
-                        throw err;
+                    if (refreshed) {
+                        userStore.logout();
+                        throw new Error('登录已过期，请重新登录。');
                     }
+                    refreshNeeded = true;
+                    controller.abort();
+                    return;
                 }
 
                 if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream')) {
@@ -52,7 +56,9 @@ export default async function streamApi(url, options = {}) {
 
             onmessage(msg) {
                 if (msg.data === '[DONE]') {
+                    completed = true;
                     if (options.onmessage) options.onmessage('', true);
+                    controller.abort();
                     return
                 }
                 try {
@@ -64,21 +70,36 @@ export default async function streamApi(url, options = {}) {
             },
 
             onerror(err) {
-                // 2. 捕获重试信号并递归
-                if (err.message === "TOKEN_REFRESHED") {
-                    return startFetch();
-                }
-
-                // 其他错误则按用户定义的 onerror 处理
-                if (options.onerror) {
-                    options.onerror(err);
-                }
                 throw err; // 停止自动重试
             },
 
-            onclose: options.onclose,
+            onclose() {
+                if (!completed) throw new Error('回复连接中断，请重新发送。');
+                options.onclose?.();
+            },
         });
+        if (refreshNeeded) {
+            refreshed = true;
+            const response = await fetch(BASE_URL + '/api/user/refresh/', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {'Content-Type': 'application/json'},
+                body: '{}',
+            });
+            const data = await response.json();
+            if (!response.ok || !data.access) {
+                userStore.logout();
+                throw new Error('登录已过期，请重新登录。');
+            }
+            userStore.setAccessToken(data.access);
+            return startFetch();
+        }
     };
 
-    return await startFetch();
+    try {
+        return await startFetch();
+    } catch (error) {
+        options.onerror?.(error);
+        throw error;
+    }
 }
